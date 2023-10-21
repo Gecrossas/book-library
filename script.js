@@ -1,13 +1,8 @@
-//TODO: add event driver logic
-
 class Dialog {
-    constructor(library) {
-        this.#library = library;
+    constructor() {
         this.#show();
         this.#startListeners();
     }
-
-    #library;
 
     //HTML elements
     #newBookDialog = document.getElementById("addBookDialog");
@@ -55,18 +50,15 @@ class Dialog {
         if (this.#titleInput.value != "" && this.#authorInput.value != "" && this.#numberOfPagesInput.value != "") {
             const newBook = new Book(this.#titleInput.value, this.#authorInput.value, this.#numberOfPagesInput.value, this.#haveReadCheckbox.checked);
             event.preventDefault(); // We don't want to submit this fake form
+            const bookEvent = new CustomEvent('bookAdded', { detail: newBook });
             this.#newBookDialog.close(JSON.stringify(newBook));
+            document.dispatchEvent(bookEvent);
         }
     }
 
     #handleDialogClose = (e) => {
         if (this.#newBookDialog.returnValue != "cancel") {
-            const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
             this.#dispose();
-            this.#library.addBookToLibrary(returnedBook);
-            // FIXME: Send event instead of using global functions inside a class
-            DisplayHandler.clearBookCards();
-            DisplayHandler.generateBookCards();
         }
     }
 
@@ -97,14 +89,14 @@ class Library {
         return this.#books;
     }
 
-    static removeBookFromLibrary(bookIndex) {
+    static addBookToLibrary = (book) => {
+        this.#books.push(book);
+    }
+
+    static removeBookFromLibrary = (bookIndex) => {
         if (bookIndex > -1) {
             this.#books.splice(bookIndex, 1);
         }
-    }
-
-    static addBookToLibrary(book) {
-        this.#books.push(book);
     }
 }
 
@@ -113,62 +105,70 @@ class DisplayHandler {
     static #cardsParent = document.querySelector(".book-cards");
     static #library;
 
-    static init = (library) => {
+    static init(library) {
         this.#library = library;
-        this.generateBookCards();
+        this.#generateBookCards();
         this.#addButton.addEventListener("click", () => {
-            new Dialog(this.#library);
+            new Dialog(library);
         });
-        
+
+        document.addEventListener('bookAdded', (event) => {
+            library.addBookToLibrary(event.detail);
+            this.#renderLibrary();
+        });
+
         this.#cardsParent.addEventListener("click", (event) => {
             if (event.target.classList.contains("remove-book")) {
-                //FIXME: add event instead of external reference to Library
-                this.#library.removeBookFromLibrary(event.target.getAttribute("data-index"));
-                this.clearBookCards();
-                this.generateBookCards();
+                const bookIndex = event.target.getAttribute("data-index");
+                library.removeBookFromLibrary(bookIndex);
+                this.#renderLibrary();
             }
         });
     }
 
-    static clearBookCards() {
+    static #renderLibrary() {
+        this.#clearBookCards();
+        this.#generateBookCards();
+    }
+
+    static #clearBookCards() {
         const cards = document.querySelectorAll(".book-card");
         cards.forEach(card => {
             card.remove();
-        })
+        });
     }
 
-    static generateBookCards() {
-        //FIXME: add event instead of external reference to Library
-        this.#library.books.forEach(book => {
-            this.#addNewBookCard(book.title, book.author, book.numberOfPages, book.haveRead, Library.books.indexOf(book));
-        })
+    static #generateBookCards() {
+        this.#library.books.forEach((book, index) => {
+            this.#addNewBookCard(book.title, book.author, book.numberOfPages, book.haveRead, index);
+        });
     }
-    
+
     static #addNewBookCard(title, author, pages, haveRead, index) {
         // Create a new div element with the "book-card" class
         const bookCard = document.createElement("div");
         bookCard.className = "book-card";
-    
+
         // Create an h3 element for the title
         const titleElement = document.createElement("h3");
         titleElement.textContent = title;
-    
+
         // Create a p element for the author
         const authorElement = document.createElement("p");
         authorElement.textContent = author;
-    
+
         // Create a p element for the number of pages
         const pagesElement = document.createElement("p");
         pagesElement.textContent = `Pages: ${pages}`;
-    
+
         // Create a div element for the read checkbox
         const readDiv = document.createElement("div");
-    
+
         // Create a label element for the checkbox
         const readLabel = document.createElement("label");
         readLabel.setAttribute("for", "haveRead");
         readLabel.textContent = "Read";
-    
+
         // Create the input element (checkbox)
         const readInput = document.createElement("input");
         readInput.setAttribute("type", "checkbox");
@@ -176,13 +176,13 @@ class DisplayHandler {
         readInput.setAttribute("id", "haveRead");
         readInput.checked = haveRead; // Set the checkbox's checked state
         readInput.disabled = true;
-    
+
         // Create button for removing book from library
         const removeButton = document.createElement("button");
         removeButton.className = "remove-book";
         removeButton.textContent = "Remove";
         removeButton.setAttribute("data-index", index);
-    
+
         // Append the elements to the bookCard
         bookCard.appendChild(titleElement);
         bookCard.appendChild(authorElement);
@@ -191,7 +191,7 @@ class DisplayHandler {
         readDiv.appendChild(readInput);
         bookCard.appendChild(readDiv);
         bookCard.appendChild(removeButton);
-    
+
         // Append the bookCard to the .book-cards container
         const bookContainer = document.querySelector(".book-cards");
         bookContainer.appendChild(bookCard);
