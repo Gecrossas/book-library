@@ -1,11 +1,15 @@
 //TODO: add event driver logic
 
 class Dialog {
-    constructor() {
+    constructor(library) {
+        this.#library = library;
         this.#show();
         this.#startListeners();
     }
 
+    #library;
+
+    //HTML elements
     #newBookDialog = document.getElementById("addBookDialog");
     #cancelButton = document.querySelector("#cancelBtn");
     #titleInput = document.getElementById("title");
@@ -59,8 +63,8 @@ class Dialog {
         if (this.#newBookDialog.returnValue != "cancel") {
             const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
             this.#dispose();
+            this.#library.addBookToLibrary(returnedBook);
             // FIXME: Send event instead of using global functions inside a class
-            Library.addBookToLibrary(returnedBook);
             DisplayHandler.clearBookCards();
             DisplayHandler.generateBookCards();
         }
@@ -107,17 +111,19 @@ class Library {
 class DisplayHandler {
     static #addButton = document.querySelector(".add-book");
     static #cardsParent = document.querySelector(".book-cards");
+    static #library;
 
-    static init = () => {
+    static init = (library) => {
+        this.#library = library;
         this.generateBookCards();
         this.#addButton.addEventListener("click", () => {
-            new Dialog();
+            new Dialog(this.#library);
         });
         
         this.#cardsParent.addEventListener("click", (event) => {
             if (event.target.classList.contains("remove-book")) {
                 //FIXME: add event instead of external reference to Library
-                Library.removeBookFromLibrary(event.target.getAttribute("data-index"));
+                this.#library.removeBookFromLibrary(event.target.getAttribute("data-index"));
                 this.clearBookCards();
                 this.generateBookCards();
             }
@@ -133,7 +139,7 @@ class DisplayHandler {
 
     static generateBookCards() {
         //FIXME: add event instead of external reference to Library
-        Library.books.forEach(book => {
+        this.#library.books.forEach(book => {
             this.#addNewBookCard(book.title, book.author, book.numberOfPages, book.haveRead, Library.books.indexOf(book));
         })
     }
@@ -196,4 +202,4 @@ Library.addBookToLibrary(new Book("The Hobbit", "J.R.R. Tolkien", 295, true));
 Library.addBookToLibrary(new Book("Dune", "Some Genius", 317, true));
 Library.addBookToLibrary(new Book("50 Shades of Gray", "Some Idiot", 69, false));
 
-DisplayHandler.init();
+DisplayHandler.init(Library);
