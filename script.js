@@ -58,9 +58,9 @@ class Dialog {
     #handleDialogClose = (e) => {
         if (this.#newBookDialog.returnValue != "cancel") {
             const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
-            addBookToLibrary(returnedBook);
             this.#dispose();
             // FIXME: Send event instead of using global functions inside a class
+            Library.addBookToLibrary(returnedBook);
             ClearBookCards();
             generateBookCards();
         }
@@ -86,25 +86,30 @@ class Book {
     }
 }
 
-//TODO:  create a (static?)Library class with below functionality
-const myLibrary = [];
-function removeBookFromLibrary(bookIndex) {
-    if (bookIndex > -1) {
-        myLibrary.splice(bookIndex, 1);
+class Library {
+    static #books = [];
+
+    static get books() {
+        return this.#books;
+    }
+
+    static removeBookFromLibrary(bookIndex) {
+        if (bookIndex > -1) {
+            this.#books.splice(bookIndex, 1);
+        }
+    }
+
+    static addBookToLibrary(book) {
+        this.#books.push(book);
     }
 }
-
-function addBookToLibrary(book) {
-    myLibrary.push(book);
-}
-
 
 const addButton = document.querySelector(".add-book");
 const cardsParent = document.querySelector(".book-cards");
 
-addBookToLibrary(new Book("The Hobbit", "J.R.R. Tolkien", 295, true));
-addBookToLibrary(new Book("Dune", "Some Genius", 317, true));
-addBookToLibrary(new Book("50 Shades of Gray", "Some Idiot", 69, false));
+Library.addBookToLibrary(new Book("The Hobbit", "J.R.R. Tolkien", 295, true));
+Library.addBookToLibrary(new Book("Dune", "Some Genius", 317, true));
+Library.addBookToLibrary(new Book("50 Shades of Gray", "Some Idiot", 69, false));
 generateBookCards();
 
 addButton.addEventListener("click", () => {
@@ -113,7 +118,7 @@ addButton.addEventListener("click", () => {
 
 cardsParent.addEventListener("click", (event) => {
     if (event.target.classList.contains("remove-book")) {
-        removeBookFromLibrary(event.target.getAttribute("data-index"));
+        Library.removeBookFromLibrary(event.target.getAttribute("data-index"));
         ClearBookCards();
         generateBookCards();
     }
@@ -129,8 +134,8 @@ function ClearBookCards() {
 }
 
 function generateBookCards() {
-    myLibrary.forEach(book => {
-        addNewBookCard(book.title, book.author, book.numberOfPages, book.haveRead, myLibrary.indexOf(book));
+    Library.books.forEach(book => {
+        addNewBookCard(book.title, book.author, book.numberOfPages, book.haveRead, Library.books.indexOf(book));
     })
 }
 
