@@ -2,8 +2,8 @@
 
 class Dialog {
     constructor() {
-        this.#resetValues();
-        this.#addListeners();
+        this.#show();
+        this.#startListeners();
     }
 
     #newBookDialog = document.getElementById("addBookDialog");
@@ -14,40 +14,62 @@ class Dialog {
     #haveReadCheckbox = document.getElementById("haveRead");
     #confirmButton = this.#newBookDialog.querySelector("#confirmBtn");
 
-    render = () => {
+    #show = () => {
         this.#newBookDialog.showModal();
     }
 
-    #resetValues() {
+    #resetValues = () => {
         this.#haveReadCheckbox.checked = false;
         this.#titleInput.value = "";
         this.#authorInput.value = "";
         this.#numberOfPagesInput.value = "";
     }
 
-    #addListeners() {
-        this.#confirmButton.addEventListener("click", (event) => {
-            if (this.#titleInput.value != "" && this.#authorInput.value != "" && this.#numberOfPagesInput.value != "") {
-                const newBook = new Book(this.#titleInput.value, this.#authorInput.value, this.#numberOfPagesInput.value, this.#haveReadCheckbox.checked);
-                event.preventDefault(); // We don't want to submit this fake form
-                this.#newBookDialog.close(JSON.stringify(newBook));
-            }
-        });
+    #startListeners = () => {
+        this.#confirmButton.addEventListener("click", this.#handleConfirmClick);
+        this.#newBookDialog.addEventListener("close", this.#handleDialogClose);
+        this.#cancelButton.addEventListener("click", this.#handleCancelClick);
+    }
 
-        this.#newBookDialog.addEventListener("close", (e) => {
-            if (this.#newBookDialog.returnValue != "cancel") {
-                const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
-                addBookToLibrary(returnedBook);
-                //FIXME: Send event instead of using global functions inside a class
-                ClearBookCards();
-                generateBookCards();
-            }
-        });
+    // Remove event listeners and reset values
+    #dispose = () => {
+        this.#resetValues();
+        this.#confirmButton.removeEventListener("click", this.#handleConfirmClick);
+        this.#newBookDialog.removeEventListener("close", this.#handleDialogClose);
+        this.#cancelButton.removeEventListener("click", this.#handleCancelClick);
+        this.#newBookDialog = null;
+        this.#cancelButton = null;
+        this.#titleInput = null;
+        this.#authorInput = null;
+        this.#numberOfPagesInput = null;
+        this.#haveReadCheckbox = null;
+        this.#confirmButton = null;
+    }
 
-        this.#cancelButton.addEventListener("click", (event) => {
+    // Event listener methods (using arrow functions to preserve 'this' context)
+    #handleConfirmClick = (event) => {
+        if (this.#titleInput.value != "" && this.#authorInput.value != "" && this.#numberOfPagesInput.value != "") {
+            const newBook = new Book(this.#titleInput.value, this.#authorInput.value, this.#numberOfPagesInput.value, this.#haveReadCheckbox.checked);
             event.preventDefault(); // We don't want to submit this fake form
-            this.#newBookDialog.close("cancel");
-        });
+            this.#newBookDialog.close(JSON.stringify(newBook));
+        }
+    }
+
+    #handleDialogClose = (e) => {
+        if (this.#newBookDialog.returnValue != "cancel") {
+            const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
+            addBookToLibrary(returnedBook);
+            this.#dispose();
+            // FIXME: Send event instead of using global functions inside a class
+            ClearBookCards();
+            generateBookCards();
+        }
+    }
+
+    #handleCancelClick = (event) => {
+        event.preventDefault(); // We don't want to submit this fake form
+        this.#newBookDialog.close("cancel");
+        this.#dispose();
     }
 }
 
@@ -64,10 +86,21 @@ class Book {
     }
 }
 
+//TODO:  create a (static?)Library class with below functionality
 const myLibrary = [];
+function removeBookFromLibrary(bookIndex) {
+    if (bookIndex > -1) {
+        myLibrary.splice(bookIndex, 1);
+    }
+}
+
+function addBookToLibrary(book) {
+    myLibrary.push(book);
+}
+
+
 const addButton = document.querySelector(".add-book");
 const cardsParent = document.querySelector(".book-cards");
-
 
 addBookToLibrary(new Book("The Hobbit", "J.R.R. Tolkien", 295, true));
 addBookToLibrary(new Book("Dune", "Some Genius", 317, true));
@@ -75,8 +108,7 @@ addBookToLibrary(new Book("50 Shades of Gray", "Some Idiot", 69, false));
 generateBookCards();
 
 addButton.addEventListener("click", () => {
-    let modal = new Dialog();
-    modal.render();
+    new Dialog();
 });
 
 cardsParent.addEventListener("click", (event) => {
@@ -87,23 +119,13 @@ cardsParent.addEventListener("click", (event) => {
     }
 });
 
+
+//TODO: Crate a class containing below functions
 function ClearBookCards() {
     const cards = document.querySelectorAll(".book-card");
     cards.forEach(card => {
         card.remove();
     })
-}
-
-
-
-function removeBookFromLibrary(bookIndex) {
-    if (bookIndex > -1) {
-        myLibrary.splice(bookIndex, 1);
-    }
-}
-
-function addBookToLibrary(book) {
-    myLibrary.push(book);
 }
 
 function generateBookCards() {
