@@ -53,19 +53,14 @@ class Dialog {
 
 class Book {
     constructor(title, author, numberOfPages, haveRead) {
-        this.#title = title;
-        this.#author = author;
-        this.#numberOfPages = numberOfPages;
-        this.#haveRead = haveRead;
+        this.title = title;
+        this.author = author;
+        this.numberOfPages = numberOfPages;
+        this.haveRead = haveRead;
     }
 
-    #title;
-    #author;
-    #numberOfPages;
-    #haveRead;
-
     markAsRead = () => {
-        this.#haveRead = true;
+        this.haveRead = true;
     }
 }
 
