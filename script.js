@@ -1,3 +1,5 @@
+//TODO: add event driver logic
+
 class Dialog {
     constructor() {
         this.#resetValues();
@@ -36,6 +38,7 @@ class Dialog {
             if (this.#newBookDialog.returnValue != "cancel") {
                 const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
                 addBookToLibrary(returnedBook);
+                //FIXME: Send event instead of using global functions inside a class
                 ClearBookCards();
                 generateBookCards();
             }
@@ -48,22 +51,23 @@ class Dialog {
     }
 }
 
+class Book {
+    constructor(title, author, numberOfPages, haveRead) {
+        this.#title = title;
+        this.#author = author;
+        this.#numberOfPages = numberOfPages;
+        this.#haveRead = haveRead;
+    }
 
-function Book(title, author, numberOfPages, haveRead) {
-    this.title = title,
-        this.author = author,
-        this.numberOfPages = numberOfPages,
-        this.haveRead = haveRead;
-    this.info = function () {
-        let readStatus = this.haveRead ? "read already" : "not read yet";
-        return `${this.title} by ${this.author}, ${this.numberOfPages} pages, ${readStatus}.`;
+    #title;
+    #author;
+    #numberOfPages;
+    #haveRead;
+
+    markAsRead = () => {
+        this.#haveRead = true;
     }
 }
-
-Book.prototype.markAsRead = function () {
-    this.haveRead = true;
-}
-
 
 const myLibrary = [];
 const addButton = document.querySelector(".add-book");
