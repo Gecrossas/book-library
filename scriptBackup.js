@@ -1,53 +1,66 @@
-class Dialog {
-    constructor() {
-        this.#resetValues();
-        this.#addListeners();
+const myLibrary = [];
+const addButton = document.querySelector(".add-book");
+//Dialog:
+const newBookDialog = document.getElementById("addBookDialog");
+const confirmButton = newBookDialog.querySelector("#confirmBtn");
+const cancelButton = newBookDialog.querySelector("#cancelBtn");
+const cardsParent = document.querySelector(".book-cards");
+const titleInput = document.getElementById("title");
+const authorInput = document.getElementById("author");
+const numberOfPagesInput = document.getElementById("numberOfPages");
+const haveReadCheckbox = document.getElementById("haveRead");
+
+addBookToLibrary(new Book("The Hobbit", "J.R.R. Tolkien", 295, true));
+addBookToLibrary(new Book("Dune", "Some Genius", 317, true));
+addBookToLibrary(new Book("50 Shades of Gray", "Some Idiot", 69, false));
+generateBookCards();
+
+addButton.addEventListener("click", () => {
+    newBookDialog.showModal();
+    haveReadCheckbox.checked = false;
+    titleInput.value = "";
+    authorInput.value = "";
+    numberOfPagesInput.value = "";
+});
+
+cardsParent.addEventListener("click", (event) => {
+    if (event.target.classList.contains("remove-book")) {
+        removeBookFromLibrary(event.target.getAttribute("data-index"));
+        ClearBookCards();
+        generateBookCards();
     }
+});
 
-    #newBookDialog = document.getElementById("addBookDialog");
-    #cancelButton = document.querySelector("#cancelBtn");
-    #titleInput = document.getElementById("title");
-    #authorInput = document.getElementById("author");
-    #numberOfPagesInput = document.getElementById("numberOfPages");
-    #haveReadCheckbox = document.getElementById("haveRead");
-    #confirmButton = this.#newBookDialog.querySelector("#confirmBtn");
-
-    render = () => {
-        this.#newBookDialog.showModal();
+confirmButton.addEventListener("click", (event) => {
+    if (titleInput.value != "" && authorInput.value != "" && numberOfPagesInput.value != "") {
+        const newBook = new Book(titleInput.value, authorInput.value, numberOfPagesInput.value, haveReadCheckbox.checked);
+        event.preventDefault(); // We don't want to submit this fake form
+        newBookDialog.close(JSON.stringify(newBook));
     }
+});
 
-    #resetValues() {
-        this.#haveReadCheckbox.checked = false;
-        this.#titleInput.value = "";
-        this.#authorInput.value = "";
-        this.#numberOfPagesInput.value = "";
+cancelButton.addEventListener("click", (event) => {
+    event.preventDefault(); // We don't want to submit this fake form
+    newBookDialog.close("cancel");
+});
+
+newBookDialog.addEventListener("close", (e) => {
+    if (newBookDialog.returnValue != "cancel") {
+        const returnedBook = JSON.parse(newBookDialog.returnValue);
+        addBookToLibrary(returnedBook);
+        ClearBookCards();
+        generateBookCards();
     }
+});
 
-    #addListeners() {
-        this.#confirmButton.addEventListener("click", (event) => {
-            if (this.#titleInput.value != "" && this.#authorInput.value != "" && this.#numberOfPagesInput.value != "") {
-                const newBook = new Book(this.#titleInput.value, this.#authorInput.value, this.#numberOfPagesInput.value, this.#haveReadCheckbox.checked);
-                event.preventDefault(); // We don't want to submit this fake form
-                this.#newBookDialog.close(JSON.stringify(newBook));
-            }
-        });
 
-        this.#newBookDialog.addEventListener("close", (e) => {
-            if (this.#newBookDialog.returnValue != "cancel") {
-                const returnedBook = JSON.parse(this.#newBookDialog.returnValue);
-                addBookToLibrary(returnedBook);
-                ClearBookCards();
-                generateBookCards();
-            }
-        });
 
-        this.#cancelButton.addEventListener("click", (event) => {
-            event.preventDefault(); // We don't want to submit this fake form
-            this.#newBookDialog.close("cancel");
-        });
-    }
+function ClearBookCards() {
+    const cards = document.querySelectorAll(".book-card");
+    cards.forEach(card => {
+        card.remove();
+    })
 }
-
 
 function Book(title, author, numberOfPages, haveRead) {
     this.title = title,
@@ -63,39 +76,6 @@ function Book(title, author, numberOfPages, haveRead) {
 Book.prototype.markAsRead = function () {
     this.haveRead = true;
 }
-
-
-const myLibrary = [];
-const addButton = document.querySelector(".add-book");
-const cardsParent = document.querySelector(".book-cards");
-
-
-addBookToLibrary(new Book("The Hobbit", "J.R.R. Tolkien", 295, true));
-addBookToLibrary(new Book("Dune", "Some Genius", 317, true));
-addBookToLibrary(new Book("50 Shades of Gray", "Some Idiot", 69, false));
-generateBookCards();
-
-addButton.addEventListener("click", () => {
-    let modal = new Dialog();
-    modal.render();
-});
-
-cardsParent.addEventListener("click", (event) => {
-    if (event.target.classList.contains("remove-book")) {
-        removeBookFromLibrary(event.target.getAttribute("data-index"));
-        ClearBookCards();
-        generateBookCards();
-    }
-});
-
-function ClearBookCards() {
-    const cards = document.querySelectorAll(".book-card");
-    cards.forEach(card => {
-        card.remove();
-    })
-}
-
-
 
 function removeBookFromLibrary(bookIndex) {
     if (bookIndex > -1) {
